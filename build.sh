@@ -17,6 +17,8 @@ printf -v PATCH "%03d" $PATCH_RAW
 # Aims to ensure a monotonically-increasing build number.
 BUILD_NUM="$MAJOR$PATCH"
 
+# Note:  obviously assumes that flutter's /bin folder is in the configured PATH.
+
 # to build (for Android, on a Win machine... at least)
 flutter build apk --build-name $VERSION --build-number $BUILD_NUM
 
