@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:keyman_browser/browser_menu.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class NavigationControls extends StatelessWidget {
@@ -9,6 +10,7 @@ class NavigationControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
         IconButton(
           icon: const Icon(Icons.arrow_back_ios),
@@ -37,7 +39,9 @@ class NavigationControls extends StatelessWidget {
               return;
             }
           },
-        )
+        ),
+        const Spacer(),
+        const BrowserMenu()
       ],
     );
   }
