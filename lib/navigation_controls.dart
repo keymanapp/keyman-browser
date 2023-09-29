@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:keyman_browser/bookmark_alert.dart';
 import 'package:keyman_browser/browser_menu.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -75,8 +76,20 @@ class _NavigationControlState extends State<NavigationControls>{
               }
             },
           ),
+          // IconButton(
+          //   iconSize: 18.0,
+          //   padding: EdgeInsets.zero,
+          //   icon: const Icon(Icons.bookmark),
+          //   onPressed: !canGoForward ? null : () {
+          //     if (canGoForward) {
+          //       widget.controller.goForward();
+          //     }
+          //   },
+          // ),
+          const BookmarkAlert(),
           const Spacer(),
           const BrowserMenu()
+          
         ],
       )
     );
