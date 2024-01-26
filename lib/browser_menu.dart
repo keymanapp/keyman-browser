@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:keyman_browser/app_about.dart';
+import 'package:keyman_browser/bookmark_list.dart';
 
 enum _BrowserMenuOptions {
-  about
+  about,
+  bookmark
 }
 
 class BrowserMenu extends StatelessWidget {
@@ -18,7 +20,15 @@ class BrowserMenu extends StatelessWidget {
           case _BrowserMenuOptions.about:
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const AppAbout())
+              MaterialPageRoute(builder: (context) => const AppAbout()             
+              )
+            );
+            break;
+          case _BrowserMenuOptions.bookmark:
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const BookMarkList()             
+              )
             );
             break;
         }
@@ -27,8 +37,13 @@ class BrowserMenu extends StatelessWidget {
         const PopupMenuItem<_BrowserMenuOptions>(
           value: _BrowserMenuOptions.about,
           child: Text('About...')
+        ),
+        const PopupMenuItem<_BrowserMenuOptions>(
+          value: _BrowserMenuOptions.bookmark,
+          child: Text('Bookmark')
         )
       ],
+      
     );
   }
 }
