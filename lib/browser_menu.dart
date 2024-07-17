@@ -1,14 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:keyman_browser/app_about.dart';
 import 'package:keyman_browser/bookmark_list.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 enum _BrowserMenuOptions {
   about,
   bookmark
 }
 
-class BrowserMenu extends StatelessWidget {
-  const BrowserMenu({super.key});
+class BrowserMenu extends StatefulWidget {
+  final List<String> bookmarks;
+  final WebViewController controller;
+  final Function(String) onBookmarkTapped;
+  final Function(String) onBookmarkRemoved;
+
+  const BrowserMenu({
+    required this.controller, 
+    required this.bookmarks,
+    required this.onBookmarkTapped,
+    required this.onBookmarkRemoved,
+    super.key});
+
+ @override
+  BrowserMenuState createState() => BrowserMenuState();
+}
+
+class BrowserMenuState extends State<BrowserMenu>  {
 
   @override
   Widget build(BuildContext context) {
@@ -27,8 +44,11 @@ class BrowserMenu extends StatelessWidget {
           case _BrowserMenuOptions.bookmark:
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const BookMarkList()             
-              )
+              MaterialPageRoute(builder: (context) =>  BookMarkList(
+                bookmarks: widget.bookmarks, 
+                controller: widget.controller, 
+                onBookmarkRemoved: widget.onBookmarkRemoved,
+                onBookmarkTapped: widget.onBookmarkTapped,))     
             );
             break;
         }

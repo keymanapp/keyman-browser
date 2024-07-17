@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-
 import 'address_bar.dart';
 import 'browser_web_view.dart';
 import 'navigation_controls.dart';
@@ -22,7 +21,7 @@ void main() {
     //
     // This works for code too, not just values: Most code changes can be
     // tested with just a hot reload.
-    colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+    colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 133, 98, 87)),
     useMaterial3: true,
   );
 
@@ -41,6 +40,12 @@ class KeymanBrowserApp extends StatefulWidget {
 
 class _KeymanBrowserAppState extends State<KeymanBrowserApp> {
   late final WebViewController controller;
+  late final List<String> bookmarks;
+  late final Function(String) onBookmarkTapped;
+  late final Function(String) onBookmarkRemoved;
+
+  final urlNotifier = ValueNotifier<String>('');
+  
 
   @override
   void initState() {
@@ -50,6 +55,21 @@ class _KeymanBrowserAppState extends State<KeymanBrowserApp> {
       ..loadRequest(
         Uri.parse('https://keyman.com')
       );
+    bookmarks = [];
+
+     onBookmarkTapped = (url) {
+      controller.loadRequest(Uri.parse(url));
+      Navigator.pop(context);
+    };
+
+    onBookmarkRemoved = (url) {
+      setState(() {
+        bookmarks.remove(url);
+        // Update any related state
+        // isBookmarked = bookmarks.contains(url);
+      });
+    };
+
   }
 
   // This widget is the root of your application.
@@ -57,10 +77,18 @@ class _KeymanBrowserAppState extends State<KeymanBrowserApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: AddressBar(controller: controller)
+        title: SizedBox(
+        height: 40, // Set the height to a non-zero value
+        child: AddressBar(controller: controller, bookmarks: bookmarks),
+    ),
+    
       ),
       body: BrowserWebView(controller: controller),
-      bottomNavigationBar: NavigationControls(controller: controller)
+      bottomNavigationBar: NavigationControls(
+        controller: controller,  
+        bookmarks: bookmarks,
+        onBookmarkRemoved: onBookmarkRemoved,
+        onBookmarkTapped: onBookmarkTapped,)
     );
   }
 }

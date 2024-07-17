@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:keyman_browser/bookmark_alert.dart';
 import 'package:keyman_browser/browser_menu.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+
 class NavigationControls extends StatefulWidget {
-  const NavigationControls({required this.controller, super.key});
+  final WebViewController controller;
+  final List<String> bookmarks;
+  final Function(String) onBookmarkTapped;
+  final Function(String) onBookmarkRemoved;
+  
+  const NavigationControls({
+    required this.controller, 
+    required this.bookmarks, 
+    required this.onBookmarkTapped,
+    required this.onBookmarkRemoved,
+    super.key});
 
   @override
   State<NavigationControls> createState() => _NavigationControlState();
-  final WebViewController controller;
 }
 
 class _NavigationControlState extends State<NavigationControls>{
@@ -76,22 +85,18 @@ class _NavigationControlState extends State<NavigationControls>{
               }
             },
           ),
-          // IconButton(
-          //   iconSize: 18.0,
-          //   padding: EdgeInsets.zero,
-          //   icon: const Icon(Icons.bookmark),
-          //   onPressed: !canGoForward ? null : () {
-          //     if (canGoForward) {
-          //       widget.controller.goForward();
-          //     }
-          //   },
-          // ),
-          const BookmarkAlert(),
           const Spacer(),
-          const BrowserMenu()
+          BrowserMenu(
+            bookmarks: widget.bookmarks, 
+            controller: widget.controller,
+            onBookmarkRemoved: widget.onBookmarkRemoved,
+            onBookmarkTapped: widget.onBookmarkTapped),
           
         ],
       )
     );
+    
   }
+  
 }
+

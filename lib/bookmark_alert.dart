@@ -1,75 +1,129 @@
 import 'package:flutter/material.dart';
-import 'package:keyman_browser/bookmark_list.dart';
-import 'package:keyman_browser/address_bar.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
-/// Flutter code sample for [showDialog].
+class BookmarkAlert extends StatefulWidget {
+  const BookmarkAlert({
+    required this.controller, 
+    required this.bookmarks,
+    super.key});
+  
+  @override
+  BookmarkAlertState createState() => BookmarkAlertState();
+  final List<String> bookmarks;
+  final WebViewController controller; 
+}
 
-void main() => runApp(const BookmarkAlert());
+class BookmarkAlertState extends State<BookmarkAlert> {
+  BookmarkAlertState({dynamic key});
+  bool outline = false;
+  String enteredUrlText = ''; 
+  var textController = TextEditingController();
 
-// class BookmarkAlert extends StatelessWidget {
-//   const BookmarkAlert({super.key});
+void saveBookmark() {
+  var urlFuture = widget.controller.currentUrl();
+  urlFuture.then((url) {
+    setState(() {
+      if (url != null) {
+        // Check if the word pair already exists in the list
+        final alreadyAdded = widget.bookmarks.contains(url);
 
-//   @override
+        // If the word pair does not exist in the list, add it
+        if (!alreadyAdded) {
+          widget.bookmarks.insert(0, url); //new bookmark alwasy appear first in the list
+          enteredUrlText = '';
+        }
+      }
+    });
+  });
+}
+
+
+
+// @override
 //   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       theme: ThemeData(
-//           colorSchemeSeed: const Color(0xff6750a4), useMaterial3: true),
-//       home: const DialogExample(),
+//     return IconButton(
+//       padding: EdgeInsets.zero,
+//       icon: Icon(
+//         outline? Icons.bookmark : Icons.bookmark_outline,
+//         color: Theme.of(context).primaryColor,
+//       ),
+//       onPressed: () {
+//         setState(() {
+//           outline =!outline; 
+//           saveBookmark(); 
+//         });
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(
+//             content: Text(outline? 'Bookmark added' : 'Bookmark removed'),
+//           ),
+//         );
+//       },
 //     );
 //   }
 // }
 
-class BookmarkAlert extends StatelessWidget {
-  const BookmarkAlert({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-            iconSize: 18.0,
-            padding: EdgeInsets.zero,
-            icon: const Icon(Icons.bookmark_add),
-            onPressed: () => _dialogBuilder(context),
-       );
+// @override
+//   Widget build(BuildContext context) {
   
-  }
+//     return 
+//      IconButton(
+//                     icon: const Icon(Icons.clear),
+//                     onPressed: (){
+//                       textController.clear();
+//                     }
+//                   ),
 
-  Future<void> _dialogBuilder(BuildContext context) {
-    return showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          //title: const Text('Basic dialog title'),
-          content: const Text(
-            'The link has been added to the bookmark list. '
-            'Do you want to see the list?', 
-           //TextEditingController.text
+//     IconButton(
+//       padding: EdgeInsets.zero,
+//       icon: Icon(
+//         outline? Icons.bookmark : Icons.bookmark_outline,
+//         color: outline? Theme.of(context).primaryColor:null,
+//       ),
+//       onPressed: () {
+//         setState(() {
+//           outline = true;
+//           saveBookmark();  
+//         });
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(
+//             content: Text(outline? 'Bookmark added' : 'Bookmark removed'),
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }
 
-          ),
-          actions: <Widget>[
-            TextButton(
-              style: TextButton.styleFrom(
-                textStyle: Theme.of(context).textTheme.labelLarge,
-              ),
-              child: const Text('yes'),
-              onPressed: () {
-                Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const BookMarkList()),
-                );
-              },
+@override
+Widget build(BuildContext context) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          textController.clear();
+        }
+      ),
+      IconButton(
+        padding: EdgeInsets.zero,
+        icon: Icon(
+          outline? Icons.bookmark : Icons.bookmark_outline,
+          color: outline? Theme.of(context).primaryColor:null,
+        ),
+        onPressed: () {
+          setState(() {
+            outline = true;
+            saveBookmark();  
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(outline? 'Bookmark added' : 'Bookmark removed'),
             ),
-            TextButton(
-              style: TextButton.styleFrom(
-                textStyle: Theme.of(context).textTheme.labelLarge,
-              ),
-              child: const Text('no'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
+          );
+        },
+      ),
+    ],
+  );
+}}
