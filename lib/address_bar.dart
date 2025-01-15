@@ -1,14 +1,24 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:keyman_browser/bookmark_list.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
+import 'package:keyman_browser/browser_menu.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class AddressBar extends StatefulWidget {
   final WebViewController controller;
   final List<String> bookmarks;
+  final Function(String) onBookmarkTapped;
+  final Function(String) onBookmarkRemoved;
+  final VoidCallback onNavigation;
 
-  const AddressBar({Key? key, required this.controller, required this.bookmarks}) : super(key: key);
+  const AddressBar({Key? key, 
+  required this.controller, 
+  required this.bookmarks,
+  required this.onBookmarkTapped,
+  required this.onBookmarkRemoved,
+  required this.onNavigation,}) : super(key: key);
 
   @override
   _AddressBarState createState() => _AddressBarState();
@@ -16,6 +26,7 @@ class AddressBar extends StatefulWidget {
 
 class _AddressBarState extends State<AddressBar> {
   late TextEditingController textController;
+  int loadingPercentage = 0;
   bool isLoading = false;
   bool isBookmarked = false;
   String searchEngineUrl = "https://www.google.com/";
@@ -28,35 +39,75 @@ class _AddressBarState extends State<AddressBar> {
       onPageStarted: (url) {
         setState(() {
           isLoading = true;
+          loadingPercentage = 0;
         });
       },
+      onProgress: (progress) {
+          setState(() {
+            loadingPercentage = progress;
+          });
+        },
       onPageFinished: (url) {
+        _updateBookmarkState();
         setState(() {
           isLoading = false;
           textController.text = url;
+          loadingPercentage = 100;
+          _injectCustomCSS();
         });
       },
     ));
   }
 
-  // @override
-  // void dispose() {
-  //   textController.dispose();
-  //   super.dispose();
-  // }
+  Future<void> _injectCustomCSS() async {
+  final fontFamily = "KeymanEmbeddedBrowserFont";
+  final fontData = await rootBundle.load('assets/fonts/Caveat-VariableFont_wght.ttf');
+  final base64Font = base64Encode(fontData.buffer.asUint8List());
+
+  final fontFaceStyle = """
+  @font-face {
+    font-family: "$fontFamily";
+    src: url(data:font/ttf;charset=utf-8;base64,$base64Font) format('truetype');
+  }
+  """;
+
+  final jsString = """
+  var style = document.createElement('style');
+  style.type = 'text/css';
+  style.innerHTML = `
+  * {
+    font-family: "$fontFamily" !important;
+  }
+  $fontFaceStyle
+  `;
+  document.getElementsByTagName('head')[0].appendChild(style);
+  """;
+
+  try {
+    await widget.controller.runJavaScript(jsString);
+  } catch (e) {
+    print('Error injecting JavaScript: $e');
+  }
+}
 
   Future<bool> _isValidUrl(String url) async {
     try {
+      // Parse the URL and check if it has a scheme and host
       final uri = Uri.parse(url);
-      if (!uri.isAbsolute) {
+      if (uri.scheme.isEmpty || uri.host.isEmpty) {
         return false;
       }
-      final response = await http.get(uri);
-      return response.statusCode == 200;
+
+      // Optionally check for URL reachability (if needed)
+      final response = await http.get(uri).timeout(const Duration(seconds: 5));
+      // return response.statusCode >= 200 && response.statusCode < 300;
+      return true;
     } catch (e) {
       return false;
     }
   }
+
+
 
   void _toggleBookmark() async {
     var url = await widget.controller.currentUrl();
@@ -65,6 +116,7 @@ class _AddressBarState extends State<AddressBar> {
         setState(() {
           if (widget.bookmarks.contains(url)) {
             widget.bookmarks.remove(url);
+            _updateBookmarkState();
             isBookmarked = false;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Bookmark removed'),),
@@ -110,96 +162,102 @@ class _AddressBarState extends State<AddressBar> {
     }
   }
 
+  
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: TextField(
-        controller: textController,
-        decoration: InputDecoration(
-          hintText: 'Navigate to',
-          contentPadding: const EdgeInsets.only(left: 8.0, bottom: 8.0, top: 8.0),
-          prefixIcon: IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () async {
-              var url = textController.text;
-              _loadUrl(url);
-            },
+    return Column(
+      children: <Widget>[
+        Container(
+          width: double.infinity,
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.2),
+                spreadRadius: 1,
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          suffixIcon: Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
             children: <Widget>[
-              IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: () {
-                  textController.clear();
-                  setState(() {
-                    isBookmarked = false; 
-                  });
-                },
-              ),
-              IconButton(
-                icon: Icon(isBookmarked ? Icons.bookmark : Icons.bookmark_outline),
-                onPressed: _toggleBookmark,
-              ),
-              IconButton(
-                icon: const Icon(Icons.list),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => BookMarkList(
-                      bookmarks: widget.bookmarks,
-                      controller: widget.controller,
-                      onBookmarkTapped: (url) {
-                        widget.controller.loadRequest(Uri.parse(url));
-                        textController.text = url;
-                        setState(() {
-                          if (widget.bookmarks.contains(url)) {
-                            isBookmarked = true;
-                          }
-                        });
-                        Navigator.pop(context);
-                      },
-                      onBookmarkRemoved: (url) {
-                        setState(() {
-                          widget.bookmarks.remove(url);
-                          isBookmarked = widget.bookmarks.contains(url);
-                        });
+              Expanded(
+                child: TextField(
+                  controller: textController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter URL or search',
+                    border: InputBorder.none,
+                    prefixIcon: IconButton(
+                      icon: const Icon(Icons.search),
+                      onPressed: () async {
+                        var url = textController.text;
+                        _loadUrl(url);
                       },
                     ),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            textController.clear();
+                            setState(() {
+                              isBookmarked = false;
+                            });
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(isBookmarked ? Icons.bookmark : Icons.bookmark_outline),
+                          onPressed: _toggleBookmark,
+                        ),
+                        BrowserMenu(
+                          bookmarks: widget.bookmarks,
+                          controller: widget.controller,
+                          onBookmarkRemoved: widget.onBookmarkRemoved,
+                          onBookmarkTapped: widget.onBookmarkTapped,
+                        ),
+                      ],
+                    ),
                   ),
+                  onSubmitted: (value) async {
+                    value = value.trim();
+                    if (value.contains('.')) {
+                      if (!(value.startsWith('http://') || value.startsWith('https://'))) {
+                        value = 'https://www.$value';
+                      }
+                      try {
+                        final uri = Uri.parse(value);
+                        if (uri.hasScheme && uri.hasAuthority) {
+                          widget.controller.loadRequest(uri);
+                          _updateBookmarkState();
+                        }
+                      } catch (e) {
+                        print('Error parsing URL: $e');
+                      }
+                    } else {
+                      _loadUrl(value);
+                    }
+                  },
+                  onChanged: (value) {
+                    setState(() {
+                      isBookmarked = false;
+                    });
+                  },
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.share),
-                onPressed: () {
-                  Share.share(textController.text);
-                },
-              )
             ],
           ),
         ),
-        onSubmitted: (value) async {
-          if (value.contains('.')) {
-            if (!(value.startsWith('http://') || value.startsWith('https://'))) {
-              widget.controller.loadRequest(Uri.parse('https://$value')); 
-              _updateBookmarkState();
-            }
-          } else {
-            _loadUrl(value);
-          }
-        },
-        onChanged: (value) {
-          setState(() {
-            isBookmarked = false;
-          });
-        },
-      ),
+        if (isLoading || loadingPercentage < 100)
+          LinearProgressIndicator(
+            color: Colors.red,
+            value: loadingPercentage / 100.0,
+          ),
+      ],
     );
   }
 }
