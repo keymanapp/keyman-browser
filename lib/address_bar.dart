@@ -1,8 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:keyman_browser/browser_menu.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
@@ -21,10 +19,10 @@ class AddressBar extends StatefulWidget {
   required this.onNavigation,}) : super(key: key);
 
   @override
-  _AddressBarState createState() => _AddressBarState();
+  AddressBarState createState() => AddressBarState();
 }
 
-class _AddressBarState extends State<AddressBar> {
+class AddressBarState extends State<AddressBar> {
   late TextEditingController textController;
   int loadingPercentage = 0;
   bool isLoading = false;
@@ -60,7 +58,7 @@ class _AddressBarState extends State<AddressBar> {
   }
 
   Future<void> _injectCustomCSS() async {
-  final fontFamily = "KeymanEmbeddedBrowserFont";
+  const fontFamily = "KeymanEmbeddedBrowserFont";
   final fontData = await rootBundle.load('assets/fonts/Caveat-VariableFont_wght.ttf');
   final base64Font = base64Encode(fontData.buffer.asUint8List());
 
@@ -86,9 +84,9 @@ class _AddressBarState extends State<AddressBar> {
   try {
     await widget.controller.runJavaScript(jsString);
   } catch (e) {
-    print('Error injecting JavaScript: $e');
+    debugPrint('Error injecting JavaScript: $e');
   }
-}
+  }
 
   Future<bool> _isValidUrl(String url) async {
     try {
@@ -99,7 +97,7 @@ class _AddressBarState extends State<AddressBar> {
       }
 
       // Optionally check for URL reachability (if needed)
-      final response = await http.get(uri).timeout(const Duration(seconds: 5));
+      // final response = await http.get(uri).timeout(const Duration(seconds: 5));
       // return response.statusCode >= 200 && response.statusCode < 300;
       return true;
     } catch (e) {
@@ -122,7 +120,7 @@ class _AddressBarState extends State<AddressBar> {
               const SnackBar(content: Text('Bookmark removed'),),
             );
           } else {
-            widget.bookmarks.add(url);
+            widget.bookmarks.insert(0, url);
             isBookmarked = true;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Bookmark added'),),
@@ -236,7 +234,7 @@ class _AddressBarState extends State<AddressBar> {
                           _updateBookmarkState();
                         }
                       } catch (e) {
-                        print('Error parsing URL: $e');
+                        debugPrint('Error parsing URL: $e');
                       }
                     } else {
                       _loadUrl(value);
@@ -254,7 +252,7 @@ class _AddressBarState extends State<AddressBar> {
         ),
         if (isLoading || loadingPercentage < 100)
           LinearProgressIndicator(
-            color: Colors.red,
+            color: Colors.deepOrange,
             value: loadingPercentage / 100.0,
           ),
       ],

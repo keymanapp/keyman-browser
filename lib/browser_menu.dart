@@ -10,7 +10,6 @@ enum _BrowserMenuOptions {
   share,
   bookmark,
   about,
-  
 }
 
 class BrowserMenu extends StatefulWidget {
@@ -53,7 +52,8 @@ class BrowserMenuState extends State<BrowserMenu>  {
               bookmarks: widget.bookmarks, 
               controller: widget.controller, 
               onBookmarkRemoved: widget.onBookmarkRemoved,
-              onBookmarkTapped: widget.onBookmarkTapped))     
+              onBookmarkTapped: widget.onBookmarkTapped
+            ))     
           );
           break;
           case _BrowserMenuOptions.share:
@@ -96,7 +96,6 @@ class BrowserMenuState extends State<BrowserMenu>  {
           ),
         ),
       ],
-      
     );
   }
 }

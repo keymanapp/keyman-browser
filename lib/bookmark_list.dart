@@ -17,10 +17,10 @@ class BookMarkList extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _BookMarkListState createState() => _BookMarkListState();
+  BookMarkListState createState() => BookMarkListState();
 }
 
-class _BookMarkListState extends State<BookMarkList> {
+class BookMarkListState extends State<BookMarkList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,7 +65,6 @@ class _BookMarkListState extends State<BookMarkList> {
                 borderRadius: BorderRadius.circular(8), // Smaller border radius
               ),
               child: ListTile(
-               
                 title: Linkify(
                   text: widget.bookmarks[index],
                   overflow: TextOverflow.ellipsis,
@@ -78,6 +77,7 @@ class _BookMarkListState extends State<BookMarkList> {
                     setState(() {
                       if (index >= 0 && index < widget.bookmarks.length) {
                         widget.onBookmarkRemoved(widget.bookmarks[index]);
+                        widget.controller.reload();
                       }
                     });
                   },

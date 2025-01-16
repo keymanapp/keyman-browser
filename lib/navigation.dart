@@ -44,13 +44,6 @@ class NavigationControls extends StatelessWidget {
             }
           },
         ),
-        // const Spacer(),
-        // IconButton(
-        //   icon: const Icon(Icons.replay),
-        //   onPressed: () {
-        //     controller.reload();
-        //   },
-        // ),
       ],
     );
   }

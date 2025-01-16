@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'address_bar.dart';
-import 'browser_menu.dart';
-// import 'browser_web_view.dart';
 import 'navigation.dart';
 
 void main() {
@@ -86,31 +84,24 @@ class _KeymanBrowserAppState extends State<KeymanBrowserApp> {
     return Scaffold(
       appBar: AppBar(
         title: SizedBox(
-        // height: 50, // Set the height to a non-zero value
         child: AddressBar(
           controller: controller, 
           bookmarks: bookmarks,
           onBookmarkRemoved: onBookmarkRemoved,
           onBookmarkTapped: onBookmarkTapped,
           onNavigation: _updateBookmarkState,),
-    ),
-    
+        ),
       ),
       body: WebViewWidget(
             controller: controller,
-          ),
-      // bottomNavigationBar: NavigationControls(
-      //   controller: controller,  
-      //   bookmarks: bookmarks,
-      //   onBookmarkRemoved: onBookmarkRemoved,
-      //   onBookmarkTapped: onBookmarkTapped,)
+      ),
       bottomNavigationBar: BottomAppBar(
         height: 55,
         child: NavigationControls(
           controller: controller,
-          onNavigation: _updateBookmarkState,),
+          onNavigation: _updateBookmarkState,
+        ),
       ),
-      
     );
   }
 }
