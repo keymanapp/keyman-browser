@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-
 import 'address_bar.dart';
-import 'browser_web_view.dart';
-import 'navigation_controls.dart';
+import 'navigation.dart';
 
 void main() {
   final theme = ThemeData(
@@ -22,7 +20,7 @@ void main() {
     //
     // This works for code too, not just values: Most code changes can be
     // tested with just a hot reload.
-    colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+    colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 133, 98, 87)),
     useMaterial3: true,
   );
 
@@ -41,6 +39,12 @@ class KeymanBrowserApp extends StatefulWidget {
 
 class _KeymanBrowserAppState extends State<KeymanBrowserApp> {
   late final WebViewController controller;
+  late final List<String> bookmarks;
+  late final Function(String) onBookmarkTapped;
+  late final Function(String) onBookmarkRemoved;
+
+  final urlNotifier = ValueNotifier<String>('');
+  
 
   @override
   void initState() {
@@ -50,6 +54,28 @@ class _KeymanBrowserAppState extends State<KeymanBrowserApp> {
       ..loadRequest(
         Uri.parse('https://keyman.com')
       );
+    bookmarks = [];
+
+     onBookmarkTapped = (url) {
+      controller.loadRequest(Uri.parse(url));
+      Navigator.pop(context);
+    };
+
+    onBookmarkRemoved = (url) {
+      setState(() {
+        bookmarks.remove(url);
+        _updateBookmarkState();
+      });
+    };
+
+  }
+
+  void _updateBookmarkState() async {
+    var url = await controller.currentUrl();
+    if (url != null) {
+      setState(() {
+      });
+    }
   }
 
   // This widget is the root of your application.
@@ -57,10 +83,25 @@ class _KeymanBrowserAppState extends State<KeymanBrowserApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: AddressBar(controller: controller)
+        title: SizedBox(
+        child: AddressBar(
+          controller: controller, 
+          bookmarks: bookmarks,
+          onBookmarkRemoved: onBookmarkRemoved,
+          onBookmarkTapped: onBookmarkTapped,
+          onNavigation: _updateBookmarkState,),
+        ),
       ),
-      body: BrowserWebView(controller: controller),
-      bottomNavigationBar: NavigationControls(controller: controller)
+      body: WebViewWidget(
+            controller: controller,
+      ),
+      bottomNavigationBar: BottomAppBar(
+        height: 55,
+        child: NavigationControls(
+          controller: controller,
+          onNavigation: _updateBookmarkState,
+        ),
+      ),
     );
   }
 }

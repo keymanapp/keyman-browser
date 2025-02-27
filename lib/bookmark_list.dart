@@ -1,231 +1,92 @@
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 
-/// Flutter code sample for [ListTile] selection in a [ListView] or [GridView].
+class BookMarkList extends StatefulWidget {
+  final List<String> bookmarks;
+  final WebViewController controller;
+  final Function(String) onBookmarkTapped;
+  final Function(String) onBookmarkRemoved;
 
-void main() => runApp(const BookMarkList());
-
-class BookMarkList extends StatelessWidget {
-  const BookMarkList({super.key});
+  const BookMarkList({
+    Key? key,
+    required this.bookmarks,
+    required this.controller,
+    required this.onBookmarkTapped,
+    required this.onBookmarkRemoved,
+  }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: ListTileSelectExample(),
-    );
-  }
+  BookMarkListState createState() => BookMarkListState();
 }
 
-class ListTileSelectExample extends StatefulWidget {
-  const ListTileSelectExample({super.key});
-
-  @override
-  ListTileSelectExampleState createState() => ListTileSelectExampleState();
-}
-
-class ListTileSelectExampleState extends State<ListTileSelectExample> {
-  bool isSelectionMode = false;
-  final int listLength = 30;
-  late List<bool> _selected;
-  bool _selectAll = false;
-  // bool _isGridMode = false;
-
-  @override
-  void initState() {
-    super.initState();
-    initializeSelection();
-  }
-
-  void initializeSelection() {
-    _selected = List<bool>.generate(listLength, (_) => false);
-  }
-
-  @override
-  void dispose() {
-    _selected.clear();
-    super.dispose();
-  }
-
+class BookMarkListState extends State<BookMarkList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'Bookmark List',
-          ),
-          leading: isSelectionMode
-              ? IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () {
-                    setState(() {
-                      isSelectionMode = false;
-                    });
-                    initializeSelection();
-                  },
-                )
-              : const SizedBox(),
-          actions: <Widget>[
-            // if (_isGridMode)
-            //   IconButton(
-            //     icon: const Icon(Icons.grid_on),
-            //     onPressed: () {
-            //       setState(() {
-            //         _isGridMode = false;
-            //       });
-            //     },
-            //   )
-            // else
-              // IconButton(
-              //   icon: const Icon(Icons.list),
-              //   onPressed: () {
-              //     setState(() {
-              //       _isGridMode = true;
-              //     });
-              //   },
-              // ),
-            if (isSelectionMode)
-              TextButton(
-                  child: !_selectAll
-                      ? const Text(
-                          'select all',
-                          style: TextStyle(color: Colors.white),
-                        )
-                      : const Text(
-                          'unselect all',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                  onPressed: () {
-                    _selectAll = !_selectAll;
-                    setState(() {
-                      _selected =
-                          List<bool>.generate(listLength, (_) => _selectAll);
-                    });
-                  }),
-          ],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent, // Transparent background
+        elevation: 0, // No shadow
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        body: //_isGridMode
-            // ? GridBuilder(
-            //     isSelectionMode: isSelectionMode,
-            //     selectedList: _selected,
-            //     onSelectionChange: (bool x) {
-            //       setState(() {
-            //         isSelectionMode = x;
-            //       });
-            //     },
-            //   )
-             ListBuilder(
-                isSelectionMode: isSelectionMode,
-                selectedList: _selected,
-                onSelectionChange: (bool x) {
-                  setState(() {
-                    isSelectionMode = x;
-                  });
-                },
-              ));
-  }
-}
-
-// class GridBuilder extends StatefulWidget {
-//   const GridBuilder({
-//     super.key,
-//     required this.selectedList,
-//     required this.isSelectionMode,
-//     required this.onSelectionChange,
-//   });
-
-//   final bool isSelectionMode;
-//   final Function(bool)? onSelectionChange;
-//   final List<bool> selectedList;
-
-//   @override
-//   GridBuilderState createState() => GridBuilderState();
-// }
-
-// class GridBuilderState extends State<GridBuilder> {
-//   void _toggle(int index) {
-//     if (widget.isSelectionMode) {
-//       setState(() {
-//         widget.selectedList[index] = !widget.selectedList[index];
-//       });
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return GridView.builder(
-//         itemCount: widget.selectedList.length,
-//         gridDelegate:
-//             const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
-//         itemBuilder: (_, int index) {
-//           return InkWell(
-//             onTap: () => _toggle(index),
-//             onLongPress: () {
-//               if (!widget.isSelectionMode) {
-//                 setState(() {
-//                   widget.selectedList[index] = true;
-//                 });
-//                 widget.onSelectionChange!(true);
-//               }
-//             },
-//             child: GridTile(
-//                 child: Container(
-//               child: widget.isSelectionMode
-//                   ? Checkbox(
-//                       onChanged: (bool? x) => _toggle(index),
-//                       value: widget.selectedList[index])
-//                   : const Icon(Icons.image),
-//             )),
-//           );
-//         });
-//   }
-// }
-
-class ListBuilder extends StatefulWidget {
-  const ListBuilder({
-    super.key,
-    required this.selectedList,
-    required this.isSelectionMode,
-    required this.onSelectionChange,
-  });
-
-  final bool isSelectionMode;
-  final List<bool> selectedList;
-  final Function(bool)? onSelectionChange;
-
-  @override
-  State<ListBuilder> createState() => _ListBuilderState();
-}
-
-class _ListBuilderState extends State<ListBuilder> {
-  void _toggle(int index) {
-    if (widget.isSelectionMode) {
-      setState(() {
-        widget.selectedList[index] = !widget.selectedList[index];
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-        itemCount: widget.selectedList.length,
-        itemBuilder: (_, int index) {
-          return ListTile(
-              onTap: () => _toggle(index),
-              onLongPress: () {
-                if (!widget.isSelectionMode) {
-                  setState(() {
-                    widget.selectedList[index] = true;
-                  });
-                  widget.onSelectionChange!(true);
-                }
-              },
-              trailing: widget.isSelectionMode
-                  ? Checkbox(
-                      value: widget.selectedList[index],
-                      onChanged: (bool? x) => _toggle(index),
-                    )
-                  : const SizedBox.shrink(),
-              title: Text('item $index'));
-        });
+        title: const Text(
+          'Bookmarks',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Color.fromARGB(217, 0, 0, 0),
+          ),
+        ),
+        centerTitle: true,
+        toolbarHeight: 70,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.deepOrange.shade600, Colors.deepOrange.shade300],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
+          ),
+        ),
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(10),
+        itemCount: widget.bookmarks.length,
+        itemBuilder: (context, index) {
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 5),
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8), // Smaller border radius
+              ),
+              child: ListTile(
+                title: Linkify(
+                  text: widget.bookmarks[index],
+                  overflow: TextOverflow.ellipsis,
+                  linkStyle: const TextStyle(fontSize: 16.0, color: Color.fromARGB(222, 16, 109, 184)),
+                  onOpen: (link) => widget.onBookmarkTapped(link.url),
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete, color: Color.fromARGB(217, 0, 0, 0)),
+                  onPressed: () {
+                    setState(() {
+                      if (index >= 0 && index < widget.bookmarks.length) {
+                        widget.onBookmarkRemoved(widget.bookmarks[index]);
+                        widget.controller.reload();
+                      }
+                    });
+                  },
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }
