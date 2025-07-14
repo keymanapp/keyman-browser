@@ -4,6 +4,9 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:keyman_browser/browser_menu.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 class AddressBar extends StatefulWidget {
   final WebViewController controller;
   final List<String> bookmarks;
@@ -29,6 +32,10 @@ class AddressBarState extends State<AddressBar> {
   bool isBookmarked = false;
   String searchEngineUrl = "https://www.google.com/";
 
+  static const platform = MethodChannel('com.example.kmmanager/font');
+  String fontBaseUri = 'file:///android_asset/';
+  String loadedFont = 'sans-serif-bold';
+
   @override
   void initState() {
     super.initState();
@@ -51,41 +58,42 @@ class AddressBarState extends State<AddressBar> {
           isLoading = false;
           textController.text = url;
           loadingPercentage = 100;
-          _injectCustomCSS();
+          // _injectCustomCSS();
+          _loadFont();
         });
       },
     ));
   }
 
-  Future<void> _injectCustomCSS() async {
-  const fontFamily = "KeymanEmbeddedBrowserFont";
-  final fontData = await rootBundle.load('assets/fonts/Caveat-VariableFont_wght.ttf');
-  final base64Font = base64Encode(fontData.buffer.asUint8List());
+  Future<void> _loadFont() async {
+    try {
+      final String font = await platform.invokeMethod('getKeyboardFontFilename');
 
-  final fontFaceStyle = """
-  @font-face {
-    font-family: "$fontFamily";
-    src: url(data:font/ttf;charset=utf-8;base64,$base64Font) format('truetype');
-  }
-  """;
+      if (font.isNotEmpty) {
+        loadedFont = font;
+        final fontUrl = '$fontBaseUri$font';
 
-  final jsString = """
-  var style = document.createElement('style');
-  style.type = 'text/css';
-  style.innerHTML = `
-  * {
-    font-family: "$fontFamily" !important;
-  }
-  $fontFaceStyle
-  `;
-  document.getElementsByTagName('head')[0].appendChild(style);
-  """;
+        final jsStr = """
+          var style = document.createElement('style');
+          style.type = 'text/css';
+          style.innerHTML = '@font-face{font-family:"KMCustomFont";src:url("$fontUrl");} *{font-family:"KMCustomFont" !important;}';
+          document.getElementsByTagName('head')[0].appendChild(style);
+        """;
 
-  try {
-    await widget.controller.runJavaScript(jsString);
-  } catch (e) {
-    debugPrint('Error injecting JavaScript: $e');
-  }
+        widget.controller.runJavaScript(jsStr);
+      } else {
+        final jsStr = """
+          var style = document.createElement('style');
+          style.type = 'text/css';
+          style.innerHTML = '*{font-family:"serif" !important;}';
+          document.getElementsByTagName('head')[0].appendChild(style);
+        """;
+
+        widget.controller.runJavaScript(jsStr);
+      }
+    } on PlatformException catch (e) {
+      print("Failed to get font: ${e.message}");
+    }
   }
 
   Future<bool> _isValidUrl(String url) async {
