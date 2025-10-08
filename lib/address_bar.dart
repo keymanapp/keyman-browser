@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:keyman_browser/browser_menu.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+
 
 class AddressBar extends StatefulWidget {
   final WebViewController controller;
@@ -74,6 +76,15 @@ class AddressBarState extends State<AddressBar> {
           _fontName = fontName;
         });
         _injectFont(fontName);
+
+        Fluttertoast.showToast(
+          msg: "Using font: $fontName",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.black87,
+          textColor: Colors.white,
+          fontSize: 14.0,
+        );
       }
     });
   }
