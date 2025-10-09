@@ -72,22 +72,47 @@ class AddressBarState extends State<AddressBar> {
     platform.setMethodCallHandler((call) async {
       if (call.method == "onFontNameReceived") {
         String fontName = call.arguments;
+        // Prevent duplicate injection
+        if (_fontName == fontName) {
+          return;
+        }
         setState(() {
           _fontName = fontName;
         });
         _injectFont(fontName);
+        Fluttertoast.showToast(msg: "Using font: $fontName");
+      } else if (call.method == "onUseDefaultFont") {
+          _removeInjectedFont();
+           setState(() {
+            _fontName = null;  
+          });
+          Fluttertoast.showToast(msg: "Using system font");
+        } else if (call.method == "onKeymanKeyboardActive") {
+          if (_fontName != null && _fontName!.isNotEmpty) {
+            _injectFont(_fontName!);
+            Fluttertoast.showToast(msg: "Keyman keyboard active: font re-applied");
+          }
+        }
+      });
+    }
 
-        Fluttertoast.showToast(
-          msg: "Using font: $fontName",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.black87,
-          textColor: Colors.white,
-          fontSize: 14.0,
-        );
-      }
-    });
+  Future<void> _removeInjectedFont() async {
+    const jsRemoveFont = """
+      (function() {
+        var style = document.getElementById('km-font-style');
+        if (style) {
+          style.remove();
+        }
+      })();
+    """;
+
+    try {
+      await widget.controller.runJavaScript(jsRemoveFont);
+    } catch (e) {
+      print("Failed to remove font style: $e");
+    }
   }
+
 
   Future<void> _injectFont(String fontName) async {
     if (fontName.isEmpty) return;
