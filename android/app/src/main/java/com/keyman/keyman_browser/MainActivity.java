@@ -6,7 +6,6 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
-import com.keyman.engine.KMManager;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
