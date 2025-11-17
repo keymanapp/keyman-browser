@@ -71,7 +71,23 @@ class AddressBarState extends State<AddressBar> {
 
     platform.setMethodCallHandler((call) async {
       if (call.method == "onFontNameReceived") {
-        String fontName = call.arguments;
+        String fontName = (call.arguments ?? "").trim();
+
+        final isEmptyFont = fontName.isEmpty;
+        // Prevent duplicate empty-name notifications
+        if (isEmptyFont && (_fontName == null || _fontName == "")) {
+          return; // ignore repeated blank font callbacks
+        }
+        if (isEmptyFont) {
+          _removeInjectedFont();
+          setState(() {
+            _fontName = ""; // mark as empty consistently
+          });
+
+          Fluttertoast.showToast(msg: "No font name provided. Using system font");
+          return;
+        }
+
         // Prevent duplicate injection
         if (_fontName == fontName) {
           return;
