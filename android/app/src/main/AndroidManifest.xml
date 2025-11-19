@@ -31,5 +31,13 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <receiver
+            android:name=".FontReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.keyman.android.keyboard_changed"/>
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
