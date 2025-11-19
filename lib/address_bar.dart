@@ -3,7 +3,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:keyman_browser/browser_menu.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 
 class AddressBar extends StatefulWidget {
   final WebViewController controller;
@@ -31,20 +31,32 @@ class AddressBarState extends State<AddressBar> {
   String searchEngineUrl = "https://www.google.com/";
   String? _fontName;
   static const platform = MethodChannel('com.example.font_channel');
+  bool _isUnknownScheme(String url) {
+    return !(url.startsWith("http://") || url.startsWith("https://"));
+  }
 
   @override
   void initState() {
     super.initState();
     textController = TextEditingController();
     widget.controller.setNavigationDelegate(NavigationDelegate(
-       onNavigationRequest: (NavigationRequest request) {
-      if (request.url.startsWith("http://")) {
-        final secureUrl = request.url.replaceFirst("http://", "https://");
-        widget.controller.loadRequest(Uri.parse(secureUrl));
-        return NavigationDecision.prevent;
-      }
-      return NavigationDecision.navigate;
-    },
+       onNavigationRequest: (NavigationRequest request) async {
+        final url = request.url;
+
+        if (url.startsWith("http://")) {
+          final secureUrl = url.replaceFirst("http://", "https://");
+          widget.controller.loadRequest(Uri.parse(secureUrl));
+          return NavigationDecision.prevent;
+        }
+        if (_isUnknownScheme(url)) {
+          final uri = Uri.parse(url);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+          return NavigationDecision.prevent;
+        }
+        return NavigationDecision.navigate;
+      },
       onPageStarted: (url) {
         setState(() {
           isLoading = true;
@@ -74,16 +86,14 @@ class AddressBarState extends State<AddressBar> {
         String fontName = (call.arguments ?? "").trim();
 
         final isEmptyFont = fontName.isEmpty;
-        // Prevent duplicate empty-name notifications
         if (isEmptyFont && (_fontName == null || _fontName == "")) {
-          return; // ignore repeated blank font callbacks
+          return; 
         }
         if (isEmptyFont) {
           _removeInjectedFont();
           setState(() {
-            _fontName = ""; // mark as empty consistently
+            _fontName = ""; 
           });
-
           Fluttertoast.showToast(msg: "No font name provided. Using system font");
           return;
         }
