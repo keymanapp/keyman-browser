@@ -36,7 +36,7 @@
             android:name=".FontReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.keyman.android.keyboard_changed"/>
+                <action android:name="com.tavultesoft.kmapro.keyboard_changed"/>
             </intent-filter>
         </receiver>
     </application>
