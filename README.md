@@ -20,3 +20,8 @@ Keyman Browser is an open-source project distributed under the **MIT License**.
 - [Documentation](https://help.keyman.com)
 - [SIL Language Technology](https://software.sil.org)
 
+## iOS Integration (TODO)
+- Create an app group of Keyman and Keyman Browser 
+- Get the current font name of Keyman for iOS into a shared container 
+- Implement a MethodChannel in Flutter iOS to read the data 
+

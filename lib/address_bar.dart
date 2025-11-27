@@ -31,9 +31,6 @@ class AddressBarState extends State<AddressBar> {
   String searchEngineUrl = "https://www.google.com/";
   String? _fontName;
   static const platform = MethodChannel('com.example.font_channel');
-  bool _isUnknownScheme(String url) {
-    return !(url.startsWith("http://") || url.startsWith("https://"));
-  }
 
   @override
   void initState() {
@@ -41,21 +38,21 @@ class AddressBarState extends State<AddressBar> {
     textController = TextEditingController();
     widget.controller.setNavigationDelegate(NavigationDelegate(
        onNavigationRequest: (NavigationRequest request) async {
-        final url = request.url;
+        final uri = Uri.parse(request.url);
 
-        if (url.startsWith("http://")) {
-          final secureUrl = url.replaceFirst("http://", "https://");
-          widget.controller.loadRequest(Uri.parse(secureUrl));
-          return NavigationDecision.prevent;
-        }
-        if (_isUnknownScheme(url)) {
-          final uri = Uri.parse(url);
-          if (await canLaunchUrl(uri)) {
+        switch (uri.scheme) {
+          case 'http':
+            final secureUri = uri.replace(scheme: 'https');
+            await widget.controller.loadRequest(secureUri);
+            return NavigationDecision.prevent;
+
+          case 'https':
+            return NavigationDecision.navigate;
+            
+          default:
             await launchUrl(uri, mode: LaunchMode.externalApplication);
-          }
-          return NavigationDecision.prevent;
+            return NavigationDecision.prevent;
         }
-        return NavigationDecision.navigate;
       },
       onPageStarted: (url) {
         setState(() {
