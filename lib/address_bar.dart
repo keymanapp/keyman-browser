@@ -1,8 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:keyman_browser/browser_menu.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+
 
 class AddressBar extends StatefulWidget {
   final WebViewController controller;
@@ -28,12 +29,22 @@ class AddressBarState extends State<AddressBar> {
   bool isLoading = false;
   bool isBookmarked = false;
   String searchEngineUrl = "https://www.google.com/";
+  String? _fontName;
+  static const platform = MethodChannel('com.example.font_channel');
 
   @override
   void initState() {
     super.initState();
     textController = TextEditingController();
     widget.controller.setNavigationDelegate(NavigationDelegate(
+       onNavigationRequest: (NavigationRequest request) {
+      if (request.url.startsWith("http://")) {
+        final secureUrl = request.url.replaceFirst("http://", "https://");
+        widget.controller.loadRequest(Uri.parse(secureUrl));
+        return NavigationDecision.prevent;
+      }
+      return NavigationDecision.navigate;
+    },
       onPageStarted: (url) {
         setState(() {
           isLoading = true;
@@ -51,66 +62,99 @@ class AddressBarState extends State<AddressBar> {
           isLoading = false;
           textController.text = url;
           loadingPercentage = 100;
-          _injectCustomCSS();
         });
+        if (_fontName != null && _fontName!.isNotEmpty) {
+          _injectFont(_fontName!);
+        }
       },
     ));
-  }
 
-  Future<void> _injectCustomCSS() async {
-  const fontFamily = "KeymanEmbeddedBrowserFont";
-  final fontData = await rootBundle.load('assets/fonts/Caveat-VariableFont_wght.ttf');
-  final base64Font = base64Encode(fontData.buffer.asUint8List());
+    platform.setMethodCallHandler((call) async {
+      if (call.method == "onFontNameReceived") {
+        String fontName = call.arguments;
+        // Prevent duplicate injection
+        if (_fontName == fontName) {
+          return;
+        }
+        setState(() {
+          _fontName = fontName;
+        });
+        _injectFont(fontName);
+        Fluttertoast.showToast(msg: "Using font: $fontName");
+      } else if (call.method == "onUseDefaultFont") {
+          _removeInjectedFont();
+           setState(() {
+            _fontName = null;  
+          });
+          Fluttertoast.showToast(msg: "Using system font");
+        } else if (call.method == "onKeymanKeyboardActive") {
+          if (_fontName != null && _fontName!.isNotEmpty) {
+            _injectFont(_fontName!);
+            Fluttertoast.showToast(msg: "Keyman keyboard active: font re-applied");
+          }
+        }
+      });
+    }
 
-  final fontFaceStyle = """
-  @font-face {
-    font-family: "$fontFamily";
-    src: url(data:font/ttf;charset=utf-8;base64,$base64Font) format('truetype');
-  }
-  """;
+  Future<void> _removeInjectedFont() async {
+    const jsRemoveFont = """
+      (function() {
+        var style = document.getElementById('km-font-style');
+        if (style) {
+          style.remove();
+        }
+      })();
+    """;
 
-  final jsString = """
-  var style = document.createElement('style');
-  style.type = 'text/css';
-  style.innerHTML = `
-  * {
-    font-family: "$fontFamily" !important;
-  }
-  $fontFaceStyle
-  `;
-  document.getElementsByTagName('head')[0].appendChild(style);
-  """;
-
-  try {
-    await widget.controller.runJavaScript(jsString);
-  } catch (e) {
-    debugPrint('Error injecting JavaScript: $e');
-  }
-  }
-
-  Future<bool> _isValidUrl(String url) async {
     try {
-      // Parse the URL and check if it has a scheme and host
-      final uri = Uri.parse(url);
-      if (uri.scheme.isEmpty || uri.host.isEmpty) {
-        return false;
-      }
-
-      // Optionally check for URL reachability (if needed)
-      // final response = await http.get(uri).timeout(const Duration(seconds: 5));
-      // return response.statusCode >= 200 && response.statusCode < 300;
-      return true;
+      await widget.controller.runJavaScript(jsRemoveFont);
     } catch (e) {
-      return false;
+      print("Failed to remove font style: $e");
     }
   }
 
+
+  Future<void> _injectFont(String fontName) async {
+    if (fontName.isEmpty) return;
+
+    final encodedFontName = Uri.encodeComponent(fontName);
+    final fontUrl = 'https://s.keyman.com/font/deploy/$encodedFontName';
+
+    final jsStr = """
+      (function() {
+        var existingStyle = document.getElementById('km-font-style');
+        if (existingStyle) {
+          existingStyle.remove();
+        }
+
+        var style = document.createElement('style');
+        style.id = 'km-font-style';
+        style.type = 'text/css';
+        style.innerHTML = \`
+          @font-face {
+            font-family: "KMRemoteFont";
+            src: url("$fontUrl");
+          }
+          * {
+            font-family: "KMRemoteFont" !important;
+          }
+        \`;
+        document.head.appendChild(style);
+      })();
+    """;
+
+    try {
+      await widget.controller.runJavaScript(jsStr);
+      print("Font injected successfully: $fontUrl");
+    } catch (e) {
+      print("Font injection failed: $e");
+    }
+  }
 
 
   void _toggleBookmark() async {
     var url = await widget.controller.currentUrl();
     if (url != null && !url.startsWith("about:blank") && !url.endsWith("about:blank")) {
-      if (await _isValidUrl(url)) {
         setState(() {
           if (widget.bookmarks.contains(url)) {
             widget.bookmarks.remove(url);
@@ -127,13 +171,8 @@ class AddressBarState extends State<AddressBar> {
             );
           }
         });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cannot bookmark invalid or inaccessible URL.')),
-        );
       }
     }
-  }
 
   void _loadUrl(String value) {
     Uri uri = Uri.parse(value);
@@ -160,7 +199,6 @@ class AddressBarState extends State<AddressBar> {
     }
   }
 
-  
 
   @override
   Widget build(BuildContext context) {
@@ -222,23 +260,7 @@ class AddressBarState extends State<AddressBar> {
                     ),
                   ),
                   onSubmitted: (value) async {
-                    value = value.trim();
-                    if (value.contains('.')) {
-                      if (!(value.startsWith('http://') || value.startsWith('https://'))) {
-                        value = 'https://www.$value';
-                      }
-                      try {
-                        final uri = Uri.parse(value);
-                        if (uri.hasScheme && uri.hasAuthority) {
-                          widget.controller.loadRequest(uri);
-                          _updateBookmarkState();
-                        }
-                      } catch (e) {
-                        debugPrint('Error parsing URL: $e');
-                      }
-                    } else {
-                      _loadUrl(value);
-                    }
+                    _loadUrl(value);
                   },
                   onChanged: (value) {
                     setState(() {
