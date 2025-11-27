@@ -3,7 +3,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:keyman_browser/browser_menu.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 
 class AddressBar extends StatefulWidget {
   final WebViewController controller;
@@ -37,14 +37,23 @@ class AddressBarState extends State<AddressBar> {
     super.initState();
     textController = TextEditingController();
     widget.controller.setNavigationDelegate(NavigationDelegate(
-       onNavigationRequest: (NavigationRequest request) {
-      if (request.url.startsWith("http://")) {
-        final secureUrl = request.url.replaceFirst("http://", "https://");
-        widget.controller.loadRequest(Uri.parse(secureUrl));
-        return NavigationDecision.prevent;
-      }
-      return NavigationDecision.navigate;
-    },
+       onNavigationRequest: (NavigationRequest request) async {
+        final uri = Uri.parse(request.url);
+
+        switch (uri.scheme) {
+          case 'http':
+            final secureUri = uri.replace(scheme: 'https');
+            await widget.controller.loadRequest(secureUri);
+            return NavigationDecision.prevent;
+
+          case 'https':
+            return NavigationDecision.navigate;
+            
+          default:
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+            return NavigationDecision.prevent;
+        }
+      },
       onPageStarted: (url) {
         setState(() {
           isLoading = true;
@@ -71,7 +80,21 @@ class AddressBarState extends State<AddressBar> {
 
     platform.setMethodCallHandler((call) async {
       if (call.method == "onFontNameReceived") {
-        String fontName = call.arguments;
+        String fontName = (call.arguments ?? "").trim();
+
+        final isEmptyFont = fontName.isEmpty;
+        if (isEmptyFont && (_fontName == null || _fontName == "")) {
+          return; 
+        }
+        if (isEmptyFont) {
+          _removeInjectedFont();
+          setState(() {
+            _fontName = ""; 
+          });
+          Fluttertoast.showToast(msg: "No font name provided. Using system font");
+          return;
+        }
+
         // Prevent duplicate injection
         if (_fontName == fontName) {
           return;

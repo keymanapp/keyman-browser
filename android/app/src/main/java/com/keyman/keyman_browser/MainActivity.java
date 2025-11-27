@@ -26,7 +26,8 @@ public class MainActivity extends FlutterActivity {
   private final BroadcastReceiver fontReceiver = new BroadcastReceiver() {
   @Override
     public void onReceive(Context context, Intent intent) {
-      if ("com.keyman.keyman_browser.RECEIVE_FONT_NAME".equals(intent.getAction())) {
+      if ("com.tavultesoft.kmapro.debug.keyboard_changed".equals(intent.getAction())
+      || "com.tavultesoft.kmapro.keyboard_changed".equals(intent.getAction())) {
         String fontName = intent.getStringExtra("fontName");
 
         if (channel != null && fontName != null) {
@@ -74,7 +75,9 @@ public class MainActivity extends FlutterActivity {
 
     channel = new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL);
 
-    IntentFilter filter = new IntentFilter("com.keyman.keyman_browser.RECEIVE_FONT_NAME");
+    IntentFilter filter = new IntentFilter();
+    filter.addAction("com.tavultesoft.kmapro.debug.keyboard_changed");
+    filter.addAction("com.tavultesoft.kmapro.keyboard_changed");
     registerReceiver(fontReceiver, filter, Context.RECEIVER_EXPORTED);
 
     getContentResolver().registerContentObserver(
