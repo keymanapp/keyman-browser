@@ -31,5 +31,14 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <receiver
+            android:name=".FontReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.tavultesoft.kmapro.keyboard_changed"/>
+                <action android:name="com.tavultesoft.kmapro.debug.keyboard_changed"/>
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
